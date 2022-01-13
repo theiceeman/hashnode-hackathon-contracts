@@ -14,11 +14,11 @@ module.exports = {
       accounts: [privateKey1, privateKey2, ...]
     } */
   },
-  etherscan: {
+  /* etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: BSCSCAN_API_KEY,
-  },
+  }, */
   solidity: {
     compilers: [
       {

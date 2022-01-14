@@ -60,6 +60,9 @@ async function seed(asset, amount) {
     "Impersonating address on localhost... ",
     Compound.util.getAddress("c" + asset)
   );
+
+  /* 
+
   await hre.network.provider.request({
     method: "hardhat_impersonateAccount",
     params: [cTokenAddress],
@@ -72,8 +75,8 @@ async function seed(asset, amount) {
 
   const signer = provider.getSigner(cTokenAddress);
 
-  const gasPrice = "0"; // only works in the localhost dev environment
-  //   const gasPrice = await provider.getGasPrice();
+  //   const gasPrice = "0"; // only works in the localhost dev environment
+  const gasPrice = await provider.getGasPrice();
   const transferTrx = await Compound.eth.trx(
     Compound.util.getAddress(asset),
     "function transfer(address, uint256) public returns (bool)",
@@ -92,5 +95,8 @@ async function seed(asset, amount) {
   );
 
   const tokens = +balanceOf / Math.pow(10, Compound.decimals[asset]);
-  console.log(asset + " amount in first localhost account wallet:", tokens);
+  console.log(asset + " amount in first localhost account wallet:", tokens); 
+
+  
+  */
 }

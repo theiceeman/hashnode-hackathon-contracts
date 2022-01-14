@@ -1,6 +1,7 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-ethers");
 require("./tasks/PrintAccounts");
+require("dotenv").config();
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -9,6 +10,9 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
+    mainnet_fork: {
+      url: process.env.MAINNET_PROVIDER_URL,
+    },
     /* rinkeby: {
       url: "https://eth-rinkeby.alchemyapi.io/v2/123abc123abc123abc123abc123abcde",
       accounts: [privateKey1, privateKey2, ...]

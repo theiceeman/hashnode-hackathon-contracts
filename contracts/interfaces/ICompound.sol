@@ -7,28 +7,34 @@ interface Erc20 {
     function transfer(address, uint256) external returns (bool);
 }
 
-
 interface CErc20 {
+    function balanceOfUnderlying(address account) external returns (uint);
+
+    function balanceOf(address account) external view returns (uint256);
+
     function mint(uint256) external returns (uint256);
 
     function exchangeRateCurrent() external returns (uint256);
 
     function supplyRatePerBlock() external returns (uint256);
 
-    function redeem(uint) external returns (uint);
+    function redeem(uint256) external returns (uint256);
 
-    function redeemUnderlying(uint) external returns (uint);
+    function redeemUnderlying(uint256) external returns (uint256);
 }
 
-
 interface CEth {
+    function balanceOfUnderlying(address account) external returns (uint);
+
+    function balanceOf(address account) external view returns (uint256);
+
     function mint() external payable;
 
     function exchangeRateCurrent() external returns (uint256);
 
     function supplyRatePerBlock() external returns (uint256);
 
-    function redeem(uint) external returns (uint);
+    function redeem(uint256) external returns (uint256);
 
-    function redeemUnderlying(uint) external returns (uint);
+    function redeemUnderlying(uint256) external returns (uint256);
 }

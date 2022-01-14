@@ -12,12 +12,12 @@ contract UserVault {
         address userAddress,
         address tokenAddress,
         uint256 amount
-    ) public {
+    ) public  {
         userVault[userAddress][tokenAddress] = amount;
     }
 
     function getUserTokenBalance(address userAddress, address tokenAddress)
-        internal
+        public
         view
         returns (uint256)
     {

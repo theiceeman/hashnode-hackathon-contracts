@@ -13,10 +13,10 @@ contract UserWallet is ReentrancyGuard {
         view total_vault balance
      */
 
-    address internal userVaultAddress;
+    address public vaultAddress;
 
-    constructor(address _userVaultAddress) {
-        userVaultAddress = _userVaultAddress;
+    constructor(address _vaultAddress) {
+        vaultAddress = _vaultAddress;
     }
 
     /* 
@@ -27,15 +27,11 @@ contract UserWallet is ReentrancyGuard {
         nonReentrant
         returns (bool success)
     {
-        require(amount > 0, "wallet: amount cannot be 0");
-        require(
-            IERC20(tokenAddress).transferFrom(
-                msg.sender,
-                userVaultAddress,
-                amount
-            )
-        );
-        UserVault vault = UserVault(userVaultAddress);
+        IERC20 paymentToken = IERC20(tokenAddress);
+        require(amount > 0, "wallet: amount cannot be 0!");
+        require(paymentToken.transferFrom(msg.sender, address(this), amount));
+        paymentToken.transfer(vaultAddress, amount);
+        UserVault vault = UserVault(vaultAddress);
         vault.addNewTokenToUserVault(msg.sender, tokenAddress, amount);
 
         return true;

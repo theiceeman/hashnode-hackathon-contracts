@@ -36,4 +36,13 @@ contract UserWallet is ReentrancyGuard {
 
         return true;
     }
+
+    /* 
+    (protocolAddress vault|compound|aave, amount, recipientAddress)
+    require only account owner can withdraw
+    amount > 0 
+    balance in protocol >= amount
+
+     */
+    // function send()
 }

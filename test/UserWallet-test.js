@@ -20,7 +20,7 @@ describe("UserWallet", function () {
 
     daiContract = await ethers.getContractFactory("ERC20Token");
     Dai = await daiContract.deploy("Dai Stablecoin", "DAI");
-    await Dai.transfer(user1.address, BigNumber.from("100000000000000000000")); //  100
+    await Dai.transfer(user1.address, BigNumber.from("200000000000000000000")); //  200
   });
 
   describe("depositFunction", function () {
@@ -50,6 +50,35 @@ describe("UserWallet", function () {
       let vaultUsdtBalance = await Usdt.balanceOf(vault.address);
       expect(vaultUsdtBalance).to.equal(expectedUsdtBalance);
     });
+  });
+
+  
+  describe("deposit of multiple tokens", function () {
+    it("should increment the user new token balance if successfull", async () => {
+      let depositAmount = BigNumber.from("200000000000000000000"); //  200
+      await Dai.connect(user1).approve(userWallet.address, depositAmount);
+      await userWallet.connect(user1).deposit(Dai.address, depositAmount);
+      let userBalance = await vault.getUserTokenBalance(
+        user1.address,
+        Dai.address
+      );
+      expect(depositAmount).to.equal(userBalance);
+    });
+    it("should assert the user balances for the different tokens if successfull", async () => {
+      let expectedUsdtBalance = BigNumber.from("100000000000000000000");
+      let expectedDaiBalance = BigNumber.from("200000000000000000000");
+      let userUsdtBalance = await vault.getUserTokenBalance(
+        user1.address,
+        Usdt.address
+      );
+      let userDaiBalance = await vault.getUserTokenBalance(
+        user1.address,
+        Dai.address
+      );
+      expect(userUsdtBalance).to.equal(expectedUsdtBalance); //  100
+      expect(expectedDaiBalance).to.equal(userDaiBalance); //  200
+
+    })
   });
 
   describe("withdrawFunction", function () {
@@ -93,5 +122,26 @@ describe("UserWallet", function () {
       let userBalance = await Usdt.balanceOf(user1.address);
       expect(withdrawalAmount).to.equal(userBalance);
     });
+    it("should reduce the user vault token balance if successfull", async () => {
+      let userBalance = await vault.getUserTokenBalance(
+        user1.address,
+        Usdt.address
+      );
+      expect(userBalance).to.equal(0);
+    });
   });
+  
+  describe("withdrawal of multiple tokens", function () {
+    it("should assert token balances are correct if successfull", async () => {
+      let withdrawalAmount = BigNumber.from("100000000000000000000"); //  100
+      await userWallet
+        .connect(user1)
+        .withdrawFromVault(user1.address, Dai.address, withdrawalAmount);
+
+      let userBalance = await Dai.balanceOf(user1.address);
+      expect(withdrawalAmount).to.equal(userBalance);
+    })
+
+  })
+
 });

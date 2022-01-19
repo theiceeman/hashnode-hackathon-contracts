@@ -27,6 +27,10 @@ contract UserWallet is ReentrancyGuard, Vault {
         nonReentrant
         returns (bool success)
     {
+        UserVaultTokenDetail memory userVault = vault._getUserVault(
+            msg.sender,
+            tokenAddress
+        );
         IERC20 paymentToken = IERC20(tokenAddress);
         require(amount > 0, "Wallet: amount cannot be 0!");
         require(
@@ -37,7 +41,8 @@ contract UserWallet is ReentrancyGuard, Vault {
             paymentToken.transfer(address(vault), amount),
             "Wallet: transfer to vault failed!"
         );
-        vault._setUserVault(msg.sender, tokenAddress, amount);
+        uint256 userNewBalance = userVault.totalAmount + amount;
+        vault._setUserVault(msg.sender, tokenAddress, userNewBalance);
 
         return true;
     }
@@ -60,11 +65,13 @@ contract UserWallet is ReentrancyGuard, Vault {
             amount <= userVault.totalAmount,
             "Wallet: Insufficient token funds for user!"
         );
-        IERC20 paymentToken = IERC20(tokenAddress);
+        IERC20 withdrawalToken = IERC20(tokenAddress);
         require(
-            paymentToken.transferFrom(address(vault), recipient, amount),
+            withdrawalToken.transferFrom(address(vault), recipient, amount),
             "Wallet: transfer to vault failed!"
         );
+        uint256 userRemainingBalance = userVault.totalAmount - amount;
+        vault._setUserVault(msg.sender, tokenAddress, userRemainingBalance);
 
         return true;
     }

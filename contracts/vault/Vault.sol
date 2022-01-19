@@ -22,7 +22,7 @@ contract Vault is Ownable {
     ) public onlyOwner {
         IERC20 paymentToken = IERC20(tokenAddress);
         if (userVault[userAddress][tokenAddress].isExists) {
-            userVault[userAddress][tokenAddress].totalAmount += amount;
+            userVault[userAddress][tokenAddress].totalAmount = amount;
         } else {
             userVault[userAddress][tokenAddress] = UserVaultTokenDetail(
                 userAddress,

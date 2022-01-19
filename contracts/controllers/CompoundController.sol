@@ -46,7 +46,7 @@ contract CompoundController {
     }
 
     /*
-        redeemType should equal false : if amount passed in, is in token supplied to compound
+        redeemType should equal false if amount passed in, is in token supplied to compound
         // `amount` is scaled up, see decimal table here:
         // https://compound.finance/docs#protocol-math
         // underlying means token you're supplying to gain cToken

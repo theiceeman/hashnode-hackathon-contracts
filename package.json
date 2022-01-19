@@ -19,8 +19,6 @@
     "ethers": "^5.0.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
     "server": "npx hardhat node",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",

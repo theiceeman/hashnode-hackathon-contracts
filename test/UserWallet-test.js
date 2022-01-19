@@ -2,42 +2,96 @@ const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
 
-describe("UserWallet Contract", function () {
-  beforeEach(async () => {
+describe("UserWallet", function () {
+  before(async () => {
     [deployer, user1, user2] = await ethers.getSigners();
-    UserVault = await ethers.getContractFactory("UserVault");
-    userVault = await UserVault.deploy();
+    Vault = await ethers.getContractFactory("Vault");
+    vault = await Vault.deploy();
 
     UserWallet = await ethers.getContractFactory("UserWallet");
-    userWallet = await UserWallet.deploy(userVault.address);
+    userWallet = await UserWallet.deploy(vault.address);
 
-    // FUND USERS ACCOUNT WITH PAYMENT OPTION TOKEN
-    const usdtContract = await ethers.getContractFactory("ERC20Token");
+    vault.transferOwnership(userWallet.address);
+
+    // FUND USERS ACCOUNT WITH PAYMENT OPTIONs TOKEN
+    usdtContract = await ethers.getContractFactory("ERC20Token");
     Usdt = await usdtContract.deploy("USDT tether", "USDT");
-    await Usdt.transfer(
-      user1.address,
-      BigNumber.from("31000000000000000000000000")
-    ); //  31000000
+    await Usdt.transfer(user1.address, BigNumber.from("100000000000000000000")); //  100
+
+    daiContract = await ethers.getContractFactory("ERC20Token");
+    Dai = await daiContract.deploy("Dai Stablecoin", "DAI");
+    await Dai.transfer(user1.address, BigNumber.from("100000000000000000000")); //  100
   });
 
-  it("should assert userVaultAddress is correct", async function () {
-    expect(await userWallet.vaultAddress()).to.equal(userVault.address);
+  describe("depositFunction", function () {
+    it("should fail if input amount is less than zero", async () => {
+      await expect(userWallet.deposit(Usdt.address, 0)).to.be.revertedWith(
+        "Wallet: amount cannot be 0!"
+      );
+    });
+    it("should increment the user vault balance", async () => {
+      let expectedUsdtBalance = BigNumber.from("100000000000000000000");
+      await Usdt.connect(user1).approve(
+        userWallet.address,
+        BigNumber.from("100000000000000000000")
+      );
+      await userWallet
+        .connect(user1)
+        .deposit(Usdt.address, BigNumber.from("100000000000000000000")); //  100
+      let userUsdtBalance = await vault.getUserTokenBalance(
+        user1.address,
+        Usdt.address
+      );
+
+      expect(userUsdtBalance).to.equal(expectedUsdtBalance); //  100
+    });
+    it("should increment usdt balance of vault contract", async () => {
+      let expectedUsdtBalance = BigNumber.from("100000000000000000000");
+      let vaultUsdtBalance = await Usdt.balanceOf(vault.address);
+      expect(vaultUsdtBalance).to.equal(expectedUsdtBalance);
+    });
   });
-  it("should fail if input amount is less than zero", async () => {
-    await expect(userWallet.recieve(Usdt.address, 0)).to.be.revertedWith(
-      "wallet: amount cannot be 0!"
-    );
-  });
-  it("should increment the user vault balance", async () => {
-    await Usdt.connect(user1).approve(
-      userWallet.address,
-      BigNumber.from("100000000000000000000")
-    );
-    await userWallet
-      .connect(user1)
-      .recieve(Usdt.address, BigNumber.from("100000000000000000000")); //  100
-    expect(
-      await userVault.getUserTokenBalance(user1.address, Usdt.address)
-    ).to.equal(BigNumber.from("100000000000000000000")); //  100
+
+  describe("withdrawFunction", function () {
+    it("should fail if account withdrawing is not the vault owner", async () => {
+      await expect(
+        userWallet
+          .connect(user2)
+          .withdrawFromVault(
+            user1.address,
+            Usdt.address,
+            BigNumber.from("100000000000000000000")
+          )
+      ).to.be.revertedWith("Wallet: Only account owner can withdraw!");
+    });
+
+    it("should fail if withdrawal amount is equals or less than zero", async () => {
+      await expect(
+        userWallet
+          .connect(user1)
+          .withdrawFromVault(user1.address, Usdt.address, 0)
+      ).to.be.revertedWith(
+        "Wallet: withdrawal amount must be greater than zero!"
+      );
+    });
+
+    it("should fail if the user token vault balance is less than the withdrawal amount", async () => {
+      let withdrawalAmount = BigNumber.from("200000000000000000000"); //  200
+      await expect(
+        userWallet
+          .connect(user1)
+          .withdrawFromVault(user1.address, Usdt.address, withdrawalAmount)
+      ).to.be.revertedWith("Wallet: Insufficient token funds for user!");
+    });
+
+    it("should increment the user token balance if successfull", async () => {
+      let withdrawalAmount = BigNumber.from("100000000000000000000"); //  100
+      await userWallet
+        .connect(user1)
+        .withdrawFromVault(user1.address, Usdt.address, withdrawalAmount);
+
+      let userBalance = await Usdt.balanceOf(user1.address);
+      expect(withdrawalAmount).to.equal(userBalance);
+    });
   });
 });

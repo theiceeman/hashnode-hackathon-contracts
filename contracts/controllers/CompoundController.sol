@@ -34,15 +34,17 @@ contract CompoundController {
         address _erc20,
         address _cErc20,
         uint256 tokenAmount
-    ) public returns (uint256) {
+    ) public returns (bool) {
         // Token being supplied to compound
         Erc20 underlying = Erc20(_erc20);
         // Token sent from compound in return
         CErc20 cToken = CErc20(_cErc20);
+        underlying.transferFrom(msg.sender, address(this), tokenAmount);
+
         underlying.approve(_cErc20, tokenAmount);
-        uint256 mintResult = cToken.mint(tokenAmount);
+        require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
         _setUserInvestments(msg.sender, _erc20, tokenAmount);
-        return mintResult;
+        return true;
     }
 
     /*

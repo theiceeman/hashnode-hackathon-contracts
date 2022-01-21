@@ -23,19 +23,8 @@
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
     "test": "hardhat test --network hardhat",
-    "test:token": "hardhat test --network hardhat ./test/LinkToken-test.js",
+    "test:wallet": "hardhat test --network hardhat ./test/UserWallet-test.js",
+    "test:compound": "hardhat test --network localhost ./test/CompoundController-test.js",
     "run": "npx hardhat run --network hardhat scripts/run.js"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   }
 }

@@ -5,10 +5,16 @@ interface Erc20 {
     function approve(address, uint256) external returns (bool);
 
     function transfer(address, uint256) external returns (bool);
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 }
 
 interface CErc20 {
-    function balanceOfUnderlying(address account) external returns (uint);
+    function balanceOfUnderlying(address account) external returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
 
@@ -24,7 +30,7 @@ interface CErc20 {
 }
 
 interface CEth {
-    function balanceOfUnderlying(address account) external returns (uint);
+    function balanceOfUnderlying(address account) external returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
 

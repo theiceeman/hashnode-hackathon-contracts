@@ -9,6 +9,8 @@ contract Vault is Ownable {
     // (user_address => token_address -> amount_locked)
     mapping(address => mapping(address => UserVaultTokenDetail))
         public userVault;
+
+
     struct UserVaultTokenDetail {
         address userAddress;
         uint256 totalAmount;

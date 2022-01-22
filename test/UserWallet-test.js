@@ -33,7 +33,7 @@ describe("UserWallet", function () {
       let expectedUsdtBalance = BigNumber.from("100000000000000000000");
       await Usdt.connect(user1).approve(
         userWallet.address,
-        BigNumber.from("100000000000000000000")
+        BigNumber.from("100000000000000000000") // 100
       );
       await userWallet
         .connect(user1)

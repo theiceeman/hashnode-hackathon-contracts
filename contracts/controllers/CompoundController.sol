@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/interfaces/IERC20.sol";
+// import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "../interfaces/ICompound.sol";
 
 contract CompoundController {
@@ -35,6 +35,7 @@ contract CompoundController {
         address _cErc20,
         uint256 tokenAmount
     ) public returns (bool) {
+        console.log("contract!");
         // Token being supplied to compound
         Erc20 underlying = Erc20(_erc20);
         // Token sent from compound in return

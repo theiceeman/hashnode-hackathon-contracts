@@ -10,7 +10,7 @@ interface Erc20 {
         address sender,
         address recipient,
         uint256 amount
-    ) external returns (bool);
+    ) external;
 }
 
 interface CErc20 {

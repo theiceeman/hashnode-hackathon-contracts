@@ -6,15 +6,15 @@ const DAI = process.env.DAI;
 const USDT = process.env.USDT;
 //
 const cDAI = process.env.DAI;
-const cUSDT = process.env.USDT;
+const cUSDT = process.env.CUSDT;
 
-const accountPvKey = process.env.DEV_ACCT_PRV_KEY;
+const USDT_WHALE = process.env.USDT_WHALE;
 
 describe("CompoundController", function () {
   before(async () => {
     [deployer, user1, user2] = await ethers.getSigners();
-    await transferEth(accountPvKey, deployer.address);
-    
+    // await transferEth(accountPvKey, deployer.address);
+
     // IERC20 = ethers.getContractAt("IERC20");
     // CErc20 = ethers.getContractAt("CErc20");
     /* 
@@ -35,19 +35,50 @@ describe("CompoundController", function () {
 
     // FUND USERS ACCOUNT WITH PAYMENT OPTIONs TOKEN
     Usdt = await ethers.getContractAt("IERC20", USDT);
-    await Usdt.transfer(user1.address, BigNumber.from("100000000000000000000")); //  100
+    // await Usdt.transfer(user1.address, BigNumber.from("100000000000000000000")); //  100
+    // console.log(await Usdt);
 
     Dai = await ethers.getContractAt("IERC20", DAI);
-    await Dai.transfer(user1.address, BigNumber.from("200000000000000000000")); //  200
+    // await Dai.transfer(user1.address, BigNumber.from("200000000000000000000")); //  200
   });
-  it("should supply tokens to compound", async () => {
-    let depositAmount = BigNumber.from("100000000000000000000"); //  100
-    await Dai.connect(user1).approve(compoundController.address, depositAmount);
-    console.log("DAMN!");
+  describe("sendErc20", function () {
+    it("should supply tokens to compound", async () => {
+      let depositAmount = BigNumber.from("100000000000000000000"); //  100
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [USDT_WHALE],
+      });
+      const signer = await ethers.getSigner(USDT_WHALE);
+      const WHALE_BALANCE = await Usdt.balanceOf(user1.address);
+      signer.sendTransaction({
+        to: user1.address,
+        value: WHALE_BALANCE,
+      });
 
-    let tx = await compoundController
-      .connect(user1)
-      .supplyErc20ToCompound(DAI, cDAI, depositAmount);
-    console.log(tx);
+      await Usdt.connect(signer).transfer(
+        user1.address,
+        depositAmount
+      );
+      // signer.approve(compoundController.address, depositAmount);
+      let tx = await compoundController
+        .connect(signer)
+        .supplyErc20ToCompound(USDT, cUSDT, depositAmount);
+      console.log(tx);
+
+      // await Usdt.connect(signer).approve(
+      //   compoundController.address,
+      //   depositAmount
+      // );
+      // console.log({ USDT, cUSDT, depositAmount });
+
+      // let tx = await compoundController.supplyErc20ToCompound(
+      //   USDT,
+      //   cUSDT,
+      //   depositAmount
+      // );
+
+      // let tx = await compoundController._supplyErc20ToCompound();
+      // console.log(tx);
+    });
   });
 });

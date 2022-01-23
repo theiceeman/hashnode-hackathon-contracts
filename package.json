@@ -22,9 +22,10 @@
     "server": "npx hardhat node",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
-    "test": "hardhat test --network hardhat",
+    "test": "hardhat test --network localhost",
     "test:wallet": "hardhat test --network hardhat ./test/UserWallet-test.js",
     "test:compound": "hardhat test --network localhost ./test/CompoundController-test.js",
-    "run": "npx hardhat run --network hardhat scripts/run.js"
+    "run": "npx hardhat run --network hardhat scripts/run.js",
+    "fork": "npx hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/[KEY]"
   }
 }

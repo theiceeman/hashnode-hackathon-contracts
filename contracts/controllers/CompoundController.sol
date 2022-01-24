@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-// import "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/ICompound.sol";
 
 contract CompoundController {
@@ -30,6 +30,35 @@ contract CompoundController {
         }
     }
 
+    function _supplyErc20ToCompound(
+        address _erc20Contract,
+        address _cErc20Contract,
+        uint256 _numTokensToSupply
+    ) public returns (uint) {
+        console.log('one');
+        // Create a reference to the underlying asset contract, like DAI.
+        Erc20 underlying = Erc20(_erc20Contract);
+        console.log('two');
+
+        // Create a reference to the corresponding cToken contract, like cDAI
+        CErc20 cToken = CErc20(_cErc20Contract);
+        console.log('three');
+
+        uint balance = underlying.balanceOf(address(this));
+        console.log('four');
+        console.log(balance);
+/* 
+        // Approve transfer on the ERC20 contract
+        underlying.approve(_cErc20Contract, _numTokensToSupply);
+        // undelying.allowance()
+
+        // Mint cTokens
+        uint mintResult = cToken.mint(_numTokensToSupply);
+        console.log(mintResult);
+        return mintResult;
+         */
+    }
+
     function supplyErc20ToCompound(
         address _erc20,
         address _cErc20,
@@ -37,13 +66,14 @@ contract CompoundController {
     ) public returns (bool) {
         console.log("contract!");
         // Token being supplied to compound
-        Erc20 underlying = Erc20(_erc20);
+        IERC20 underlying = IERC20(_erc20);
         // Token sent from compound in return
         CErc20 cToken = CErc20(_cErc20);
-        underlying.transferFrom(msg.sender, address(this), tokenAmount);
+        // underlying.transferFrom(msg.sender, address(this), tokenAmount);
 
         underlying.approve(_cErc20, tokenAmount);
-        require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
+        cToken.mint(tokenAmount);
+        // require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
         _setUserInvestments(msg.sender, _erc20, tokenAmount);
         return true;
     }

@@ -32,14 +32,9 @@ describe("CompoundController", function () {
 
     CompoundController = await ethers.getContractFactory("CompoundController");
     compoundController = await CompoundController.deploy();
-
-    // FUND USERS ACCOUNT WITH PAYMENT OPTIONs TOKEN
+    
     Usdt = await ethers.getContractAt("IERC20", USDT);
-    // await Usdt.transfer(user1.address, BigNumber.from("100000000000000000000")); //  100
-    // console.log(await Usdt);
-
     Dai = await ethers.getContractAt("IERC20", DAI);
-    // await Dai.transfer(user1.address, BigNumber.from("200000000000000000000")); //  200
   });
   describe("sendErc20", function () {
     it("should supply tokens to compound", async () => {
@@ -49,36 +44,18 @@ describe("CompoundController", function () {
         params: [USDT_WHALE],
       });
       const signer = await ethers.getSigner(USDT_WHALE);
-      const WHALE_BALANCE = await Usdt.balanceOf(user1.address);
-      signer.sendTransaction({
-        to: user1.address,
-        value: WHALE_BALANCE,
-      });
+      await Usdt.connect(signer).transfer(user1.address, "100");
 
-      await Usdt.connect(signer).transfer(
-        user1.address,
-        depositAmount
-      );
-      // signer.approve(compoundController.address, depositAmount);
+      await Usdt.connect(user1).transfer(compoundController.address, "100");
+      console.log("compoundController_balance",await Usdt.balanceOf( compoundController.address));
+      console.log({USDT, cUSDT})
       let tx = await compoundController
-        .connect(signer)
-        .supplyErc20ToCompound(USDT, cUSDT, depositAmount);
+        .connect(user1)
+        ._supplyErc20ToCompound(USDT, cUSDT, "100");
+      /* let tx = await compoundController
+        .connect(user1)
+        .supplyErc20ToCompound(USDT, cUSDT, "100"); */
       console.log(tx);
-
-      // await Usdt.connect(signer).approve(
-      //   compoundController.address,
-      //   depositAmount
-      // );
-      // console.log({ USDT, cUSDT, depositAmount });
-
-      // let tx = await compoundController.supplyErc20ToCompound(
-      //   USDT,
-      //   cUSDT,
-      //   depositAmount
-      // );
-
-      // let tx = await compoundController._supplyErc20ToCompound();
-      // console.log(tx);
     });
   });
 });

@@ -35,28 +35,21 @@ contract CompoundController {
         address _cErc20Contract,
         uint256 _numTokensToSupply
     ) public returns (uint) {
-        console.log('one');
-        // Create a reference to the underlying asset contract, like DAI.
         Erc20 underlying = Erc20(_erc20Contract);
-        console.log('two');
-
-        // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(_cErc20Contract);
-        console.log('three');
 
         uint balance = underlying.balanceOf(address(this));
-        console.log('four');
-        console.log(balance);
-/* 
+
         // Approve transfer on the ERC20 contract
         underlying.approve(_cErc20Contract, _numTokensToSupply);
+        return balance;
         // undelying.allowance()
 
         // Mint cTokens
         uint mintResult = cToken.mint(_numTokensToSupply);
         console.log(mintResult);
         return mintResult;
-         */
+        
     }
 
     function supplyErc20ToCompound(

@@ -48,7 +48,6 @@ describe("CompoundController", function () {
       });
       const signer = await ethers.getSigner(USDT_WHALE);
       await Usdt.connect(signer).transfer(user1.address, "10000");
-
       // await Usdt.connect(user1).transfer(compoundController.address, "100");
 
       /* let tx = await cusdt

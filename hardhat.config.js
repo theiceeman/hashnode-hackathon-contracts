@@ -35,11 +35,11 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
-      },
-    },
+        runs: 200
+      }
+    }
   },
   mocha: {
-    timeout: 20000,
+    timeout: 50000,
   },
 };

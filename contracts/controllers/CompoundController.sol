@@ -31,25 +31,20 @@ contract CompoundController {
     }
 
     function _supplyErc20ToCompound(
-        address _erc20Contract,
-        address _cErc20Contract,
-        uint256 _numTokensToSupply
-    ) public returns (uint) {
-        Erc20 underlying = Erc20(_erc20Contract);
-        CErc20 cToken = CErc20(_cErc20Contract);
+        address _erc20,
+        address _cErc20,
+        uint256 tokenAmount
+    ) public returns (bool) {
+        Erc20 underlying = Erc20(_erc20);
+        CErc20 cToken = CErc20(_cErc20);
 
-        uint balance = underlying.balanceOf(address(this));
+        underlying.balanceOf(address(this));
 
         // Approve transfer on the ERC20 contract
-        underlying.approve(_cErc20Contract, _numTokensToSupply);
-        return balance;
-        // undelying.allowance()
-
-        // Mint cTokens
-        uint mintResult = cToken.mint(_numTokensToSupply);
-        console.log(mintResult);
-        return mintResult;
-        
+        underlying.approve(_cErc20, tokenAmount);
+        require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
+        _setUserInvestments(msg.sender, _erc20, tokenAmount);
+        return true;
     }
 
     function supplyErc20ToCompound(

@@ -2,10 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../vault/Vault.sol";
 import "../interfaces/ICompound.sol";
 
-contract CompoundController {
+contract CompoundController is ReentrancyGuard, Vault {
+    Vault private vault;
+
     // mapping(userAddress => tokenAddress => tokenAmount, isExists)
     mapping(address => mapping(address => UserInvestedTokenDetails))
         public UserInvestments;
@@ -22,7 +26,7 @@ contract CompoundController {
     ) internal {
         if (UserInvestments[userAddress][tokenAddress].isExists) {
             UserInvestments[userAddress][tokenAddress]
-                .tokenAmount += tokenAmount;
+                .tokenAmount = tokenAmount;
         } else {
             UserInvestments[userAddress][
                 tokenAddress
@@ -30,39 +34,43 @@ contract CompoundController {
         }
     }
 
-    function _supplyErc20ToCompound(
-        address _erc20,
-        address _cErc20,
-        uint256 tokenAmount
-    ) public returns (bool) {
-        Erc20 underlying = Erc20(_erc20);
-        CErc20 cToken = CErc20(_cErc20);
+    function _getUserInvestment(address userAddress, address tokenAddress)
+        public
+        view
+        returns (UserInvestedTokenDetails memory)
+    {
+        if (UserInvestments[userAddress][tokenAddress].isExists) {
+            return UserInvestments[userAddress][tokenAddress];
+        } else {
+            return UserInvestedTokenDetails(0, false);
+        }
+    }
 
-        underlying.balanceOf(address(this));
-
-        // Approve transfer on the ERC20 contract
-        underlying.approve(_cErc20, tokenAmount);
-        require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
-        _setUserInvestments(msg.sender, _erc20, tokenAmount);
-        return true;
+    constructor(address _vaultAddress) {
+        vault = Vault(_vaultAddress);
     }
 
     function supplyErc20ToCompound(
         address _erc20,
         address _cErc20,
+        address userAddress,
         uint256 tokenAmount
     ) public returns (bool) {
-        console.log("contract!");
-        // Token being supplied to compound
-        IERC20 underlying = IERC20(_erc20);
-        // Token sent from compound in return
+        Erc20 underlying = Erc20(_erc20);
         CErc20 cToken = CErc20(_cErc20);
-        // underlying.transferFrom(msg.sender, address(this), tokenAmount);
 
+        UserInvestedTokenDetails memory userInvestment = _getUserInvestment(
+            userAddress,
+            _erc20
+        );
+
+        // Approve transfer on the ERC20 contract
         underlying.approve(_cErc20, tokenAmount);
-        cToken.mint(tokenAmount);
-        // require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
-        _setUserInvestments(msg.sender, _erc20, tokenAmount);
+        require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
+
+        // Update users investment balance
+        uint256 userNewBalance = userInvestment.tokenAmount + tokenAmount;
+        _setUserInvestments(userAddress, _erc20, userNewBalance);
         return true;
     }
 

@@ -9,7 +9,7 @@ contract Vault is Ownable {
     // (user_address => token_address -> amount_locked)
     mapping(address => mapping(address => UserVaultTokenDetail))
         public userVault;
-
+    uint256 public totalInVault;
 
     struct UserVaultTokenDetail {
         address userAddress;
@@ -33,19 +33,30 @@ contract Vault is Ownable {
             );
         }
         // Approve userWallet to be able to withdraw this token from the vault when needed
-        paymentToken.approve(msg.sender, amount);
+        uint256 walletTokenAllowance = paymentToken.allowance(
+            address(this),
+            msg.sender
+        );
+        paymentToken.approve(msg.sender, walletTokenAllowance + amount);
     }
 
     function _getUserVault(address userAddress, address tokenAddress)
         public
         view
-        onlyOwner
         returns (UserVaultTokenDetail memory)
     {
         if (userVault[userAddress][tokenAddress].isExists) {
             return userVault[userAddress][tokenAddress];
         } else {
             return UserVaultTokenDetail(address(0), 0, false);
+        }
+    }
+
+    function _setTotalInVault(uint256 amount) internal {
+        if (totalInVault == 0) {
+            totalInVault = amount;
+        } else {
+            totalInVault += amount;
         }
     }
 

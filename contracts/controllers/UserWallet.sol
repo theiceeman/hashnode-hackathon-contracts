@@ -5,6 +5,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../vault/Vault.sol";
+import "../controllers/CompoundController.sol";
 
 contract UserWallet is ReentrancyGuard, Vault {
     /*
@@ -14,9 +15,11 @@ contract UserWallet is ReentrancyGuard, Vault {
      */
 
     Vault private vault;
+    CompoundController private compoundController;
 
-    constructor(address _vaultAddress) {
+    constructor(address _vaultAddress, address _compoundControllerAddress) {
         vault = Vault(_vaultAddress);
+        compoundController = CompoundController(_compoundControllerAddress);
     }
 
     /* 
@@ -73,6 +76,50 @@ contract UserWallet is ReentrancyGuard, Vault {
         uint256 userRemainingBalance = userVault.totalAmount - amount;
         vault._setUserVault(msg.sender, tokenAddress, userRemainingBalance);
 
+        return true;
+    }
+
+    function investInCompound(
+        address _erc20,
+        address _cErc20,
+        uint256 tokenAmount
+    ) public nonReentrant returns (bool) {
+        IERC20 paymentToken = IERC20(_erc20);
+        UserVaultTokenDetail memory userVault = vault._getUserVault(
+            msg.sender,
+            _erc20
+        );
+        require(
+            userVault.isExists && userVault.totalAmount != 0,
+            "Wallet: fund your wallet to continue!"
+        );
+        require(
+            tokenAmount > 0,
+            "Wallet: Invest amount must be greater than zero!"
+        );
+        require(
+            tokenAmount <= userVault.totalAmount,
+            "Wallet: Insufficient token funds for user!"
+        );
+
+        // Transfer token from vault to the compoundController
+        paymentToken.transferFrom(
+            address(vault),
+            address(compoundController),
+            tokenAmount
+        );
+        require(
+            compoundController.supplyErc20ToCompound(
+                _erc20,
+                _cErc20,
+                msg.sender,
+                tokenAmount
+            ),
+            "Wallet: investment in compound failed!"
+        );
+        // Update user vault(wallet) balance
+        uint256 userRemainingBalance = userVault.totalAmount - tokenAmount;
+        vault._setUserVault(msg.sender, _erc20, userRemainingBalance);
         return true;
     }
 }

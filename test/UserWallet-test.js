@@ -5,13 +5,22 @@ const { ethers } = require("hardhat");
 describe("UserWallet", function () {
   before(async () => {
     [deployer, user1, user2] = await ethers.getSigners();
+
+    // Deployment configs
     Vault = await ethers.getContractFactory("Vault");
     vault = await Vault.deploy();
 
+    CompoundController = await ethers.getContractFactory("CompoundController");
+    compoundController = await CompoundController.deploy(vault.address);
+
     UserWallet = await ethers.getContractFactory("UserWallet");
-    userWallet = await UserWallet.deploy(vault.address);
+    userWallet = await UserWallet.deploy(
+      vault.address,
+      compoundController.address
+    );
 
     vault.transferOwnership(userWallet.address);
+    // Deployment config ends...
 
     // FUND USERS ACCOUNT WITH PAYMENT OPTIONs TOKEN
     usdtContract = await ethers.getContractFactory("ERC20Token");

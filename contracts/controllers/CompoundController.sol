@@ -138,4 +138,21 @@ contract CompoundController is ReentrancyGuard, Vault {
         CErc20 cToken = CErc20(_cErc20);
         return cToken.balanceOfUnderlying(address(this));
     }
+
+    function getInfo(address cTokenAddress)
+        external
+        returns (uint256 exchangeRate, uint256 supplyRate)
+    {
+        CErc20 cToken = CErc20(cTokenAddress);
+        // Amount of current exchange rate from cToken to underlying
+        exchangeRate = cToken.exchangeRateCurrent();
+        // Amount added to you supply balance this block
+        supplyRate = cToken.supplyRatePerBlock();
+        return (exchangeRate, supplyRate);
+    }
+
+
+
+
+    
 }

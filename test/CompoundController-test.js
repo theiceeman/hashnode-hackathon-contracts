@@ -1,8 +1,13 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
-const { USDT_ABI, CUSDT_ABI, impersonateAccount } = require("./helpers/utils");
+const {
+  impersonateAccount,
+  cTokenUnderlyingExchangeRate,
+} = require("./helpers/utils");
+const { cDAI_ABI } = require("./abi/cdai");
+const { DAI_ABI } = require("./abi/dai");
 const { ethers } = require("hardhat");
-const provider = ethers.getDefaultProvider();
+// const provider = ethers.getDefaultProvider();
 
 // Payment options...
 const DAI = process.env.DAI;
@@ -36,7 +41,7 @@ describe("CompoundController", function () {
 
     Usdt = await ethers.getContractAt("IERC20", USDT);
     Dai = await ethers.getContractAt("IERC20", DAI);
-    Cusdt = new ethers.Contract(cUSDT, CUSDT_ABI);
+    Cdai = new ethers.Contract(cDAI, cDAI_ABI, ethers.provider);
 
     // Impersonate an account with enough DAI
     signer = await impersonateAccount(DAI_WHALE);
@@ -84,6 +89,23 @@ describe("CompoundController", function () {
     it("should assert user remaining token balance in vault(wallet) is correct", async () => {
       let userBalance = await vault.getUserTokenBalance(signer.address, DAI);
       expect(userBalance).to.equal(50);
+    });
+    it("should assert no of cDAI tokens owned by compoundController is successfull", async () => {
+      let depositAmount = BigNumber.from("50000000000000000000"); //  50
+      /* const { exchangeRate, supplyRate } =
+        await compoundController.callStatic.getInfo(cDAI);
+      let oneCTokenToUnderlying = await cTokenUnderlyingExchangeRate(
+        DAI_ABI,
+        DAI,
+        cDAI_ABI,
+        cDAI
+      );
+      console.log({ exchangeRate, supplyRate, oneCTokenToUnderlying });
+      await Dai.connect(signer).approve(cDAI, depositAmount);
+      await Cdai.connect(signer).mint(depositAmount); */
+      let userBalance = await Cdai.balanceOf(compoundController.address);
+      console.log(userBalance);
+      // expect(userBalance).to.equal(50);
     });
   });
 });

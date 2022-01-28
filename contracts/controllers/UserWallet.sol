@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../vault/Vault.sol";
 import "../controllers/CompoundController.sol";
 
-contract UserWallet is ReentrancyGuard, Vault {
+contract UserWallet is ReentrancyGuard, Vault, CompoundController {
     /*
         send tokens that will be stored in their vault (recieve)
         withdraw tokens from vault (send)
@@ -120,6 +120,42 @@ contract UserWallet is ReentrancyGuard, Vault {
         // Update user vault(wallet) balance
         uint256 userRemainingBalance = userVault.totalAmount - tokenAmount;
         vault._setUserVault(msg.sender, _erc20, userRemainingBalance);
+        return true;
+    }
+
+    function withdrawFromCompound(
+        address _erc20,
+        address _cErc20,
+        uint256 tokenAmount
+    ) public nonReentrant returns(bool){
+        UserInvestedTokenDetails memory userInvestment = compoundController
+            ._getUserInvestment(msg.sender, _erc20);
+        require(
+            userInvestment.isExists && userInvestment.tokenAmount != 0,
+            "Wallet: invest in compound to continue!"
+        );
+        require(
+            tokenAmount > 0,
+            "Wallet: Withdrawal amount must be greater than zero!"
+        );
+        require(
+            tokenAmount <= userInvestment.tokenAmount,
+            "Wallet: Insufficient token funds for user!"
+        );
+        require(
+            compoundController.redeemCErc20Tokens(
+                tokenAmount,
+                false,
+                _cErc20,
+                _erc20,
+                msg.sender
+            ),
+            "Wallet: Withdrawal from compound failed!"
+        );
+
+        // Update user vault(wallet) balance
+        uint256 userNewBalance = userInvestment.tokenAmount + tokenAmount;
+        vault._setUserVault(msg.sender, _erc20, userNewBalance);
         return true;
     }
 }

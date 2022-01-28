@@ -11,7 +11,7 @@ describe("UserWallet", function () {
     vault = await Vault.deploy();
 
     CompoundController = await ethers.getContractFactory("CompoundController");
-    compoundController = await CompoundController.deploy(vault.address);
+    compoundController = await CompoundController.deploy();
 
     UserWallet = await ethers.getContractFactory("UserWallet");
     userWallet = await UserWallet.deploy(

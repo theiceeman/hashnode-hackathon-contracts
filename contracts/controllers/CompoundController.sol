@@ -4,12 +4,9 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../vault/Vault.sol";
 import "../interfaces/ICompound.sol";
 
-contract CompoundController is ReentrancyGuard, Vault {
-    Vault private vault;
-
+contract CompoundController is ReentrancyGuard {
     // mapping(userAddress => tokenAddress => tokenAmount, isExists)
     mapping(address => mapping(address => UserInvestedTokenDetails))
         public UserInvestments;
@@ -46,10 +43,6 @@ contract CompoundController is ReentrancyGuard, Vault {
         }
     }
 
-    constructor(address _vaultAddress) {
-        vault = Vault(_vaultAddress);
-    }
-
     function supplyErc20ToCompound(
         address _erc20,
         address _cErc20,
@@ -84,9 +77,10 @@ contract CompoundController is ReentrancyGuard, Vault {
         uint256 amountToRedeem,
         bool redeemType,
         address _cErc20,
-        address _erc20Address
+        address _erc20Address,
+        address userAddress
     ) public returns (bool) {
-        uint256 userTokenBalance = UserInvestments[msg.sender][_erc20Address]
+        uint256 userTokenBalance = UserInvestments[userAddress][_erc20Address]
             .tokenAmount;
 
         // Create a reference to the corresponding cToken contract, like cDAI
@@ -103,11 +97,11 @@ contract CompoundController is ReentrancyGuard, Vault {
 
         // After redeeming from compound to this contract, transfer redeemed token to the owners address
         Erc20 underlying = Erc20(_erc20Address);
-        underlying.transfer(msg.sender, amountToRedeem);
+        underlying.transfer(userAddress, amountToRedeem);
 
         // Update the users investment balance
         uint256 finalUserBalance = userTokenBalance - amountToRedeem;
-        _setUserInvestments(msg.sender, _erc20Address, finalUserBalance);
+        _setUserInvestments(userAddress, _erc20Address, finalUserBalance);
 
         return true;
     }
@@ -151,8 +145,29 @@ contract CompoundController is ReentrancyGuard, Vault {
         return (exchangeRate, supplyRate);
     }
 
-
-
-
-    
+    /* 
+        Users will make static calls to this function, and get their interest which will now be displayed to the frontend.
+     */
+    function userTokenAccruedInterest(
+        address cTokenAddress,
+        address erc20Address,
+        address userAddress
+    ) external returns (uint256) {
+        CErc20 cToken = CErc20(cTokenAddress);
+        Erc20 underlying = Erc20(_erc20Address);
+        uint256 totalAccruedInterest = cToken.balanceOfUnderlying(
+            address(this)
+        );
+        uint256 totalErc20Invested = underlying.balanceOf(address(this));
+        UserInvestedTokenDetails memory userInvestment = _getUserInvestment(
+            userAddress,
+            erc20Address
+        );
+        uint256 userPercentageInTotal = (userInvestment.tokenAmount * 100) /
+            totalErc20Invested;
+            return userPercentageInTotal;
+        uint256 userInterest = (totalAccruedInterest / 100) *
+            userPercentageInTotal;
+        return userInterest;
+    }
 }

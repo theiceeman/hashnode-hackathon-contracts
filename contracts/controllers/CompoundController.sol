@@ -7,39 +7,48 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/ICompound.sol";
 
 contract CompoundController is ReentrancyGuard {
-    // mapping(userAddress => tokenAddress => tokenAmount, isExists)
-    mapping(address => mapping(address => UserInvestedTokenDetails))
+    // mapping(userAddress =>  (id => tokenAmount,tokenAddress, isExists) )
+
+    mapping(address => mapping(uint256 => UserInvestedTokenDetails))
         public UserInvestments;
+
+    // userAddress -> noOfUserInvestments
+    mapping(address => uint256) public countUserInvestments;
 
     struct UserInvestedTokenDetails {
         uint256 tokenAmount;
+        address tokenAddress;
+        uint256 totalInvestedBeforeUser;
         bool isExists;
     }
 
     function _setUserInvestments(
         address userAddress,
         address tokenAddress,
+        uint256 totalInvestedBeforeUser,
         uint256 tokenAmount
     ) internal {
-        if (UserInvestments[userAddress][tokenAddress].isExists) {
-            UserInvestments[userAddress][tokenAddress]
-                .tokenAmount = tokenAmount;
-        } else {
-            UserInvestments[userAddress][
-                tokenAddress
-            ] = UserInvestedTokenDetails(tokenAmount, true);
-        }
+        uint256 userInvestmentCount = countUserInvestments[userAddress];
+        UserInvestments[userAddress][
+            userInvestmentCount + 1
+        ] = UserInvestedTokenDetails(
+            tokenAmount,
+            tokenAddress,
+            totalInvestedBeforeUser,
+            true
+        );
+        countUserInvestments[userAddress] = userInvestmentCount + 1;
     }
 
-    function _getUserInvestment(address userAddress, address tokenAddress)
-        public
-        view
-        returns (UserInvestedTokenDetails memory)
-    {
-        if (UserInvestments[userAddress][tokenAddress].isExists) {
-            return UserInvestments[userAddress][tokenAddress];
+    function _getUserInvestment(
+        address userAddress,
+        address tokenAddress,
+        uint256 investmentId
+    ) public view returns (UserInvestedTokenDetails memory) {
+        if (UserInvestments[userAddress][investmentId].isExists) {
+            return UserInvestments[userAddress][investmentId];
         } else {
-            return UserInvestedTokenDetails(0, false);
+            return UserInvestedTokenDetails(0, address(0), 0, false);
         }
     }
 
@@ -51,19 +60,21 @@ contract CompoundController is ReentrancyGuard {
     ) public returns (bool) {
         Erc20 underlying = Erc20(_erc20);
         CErc20 cToken = CErc20(_cErc20);
-
-        UserInvestedTokenDetails memory userInvestment = _getUserInvestment(
-            userAddress,
-            _erc20
+        uint256 totalInvestedBeforeUser = cToken.balanceOfUnderlying(
+            address(this)
         );
 
         // Approve transfer on the ERC20 contract
         underlying.approve(_cErc20, tokenAmount);
         require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
 
-        // Update users investment balance
-        uint256 userNewBalance = userInvestment.tokenAmount + tokenAmount;
-        _setUserInvestments(userAddress, _erc20, userNewBalance);
+        // Create new token investment for user
+        _setUserInvestments(
+            userAddress,
+            _erc20,
+            totalInvestedBeforeUser,
+            tokenAmount
+        );
         return true;
     }
 
@@ -78,9 +89,10 @@ contract CompoundController is ReentrancyGuard {
         bool redeemType,
         address _cErc20,
         address _erc20Address,
-        address userAddress
+        address userAddress,
+        uint256 investmentId
     ) public returns (bool) {
-        uint256 userTokenBalance = UserInvestments[userAddress][_erc20Address]
+        uint256 userTokenBalance = UserInvestments[userAddress][investmentId]
             .tokenAmount;
 
         // Create a reference to the corresponding cToken contract, like cDAI
@@ -101,7 +113,8 @@ contract CompoundController is ReentrancyGuard {
 
         // Update the users investment balance
         uint256 finalUserBalance = userTokenBalance - amountToRedeem;
-        _setUserInvestments(userAddress, _erc20Address, finalUserBalance);
+        UserInvestments[userAddress][investmentId]
+            .tokenAmount = finalUserBalance;
 
         return true;
     }
@@ -146,28 +159,48 @@ contract CompoundController is ReentrancyGuard {
     }
 
     /* 
-        Users will make static calls to this function, and get their interest which will now be displayed to the frontend.
+    cerc20
+    get current exchange rate
+    call utils function
+    1 cTokem = utils function-return
+
+
+
+ */
+    function getErc20EquivOfCtoken(address cTokenAddress, uint256 cTokenAmount)
+        public
+        returns (uint256)
+    {
+        uint256 cTokenDecimals = 8;
+        uint256 underlyingDecimals = 18;
+        CErc20 cToken = CErc20(cTokenAddress);
+
+        uint256 currentExchangeRate = cToken.exchangeRateCurrent();
+        uint256 mantissa = 18 + (underlyingDecimals - cTokenDecimals);
+        uint256 oneCTokenInUnderlying = currentExchangeRate / (10**mantissa);
+        return cTokenAmount * oneCTokenInUnderlying;
+    }
+
+    /* 
+        This function will return the total cToken currently invested by this contract 
+        and the total token invested by the user, so that the users interest 
+        can be calclated off-chain.
      */
-    function userTokenAccruedInterest(
+   /*  function getDetailsForCalcUserInterest(
         address cTokenAddress,
         address erc20Address,
         address userAddress
-    ) external returns (uint256) {
+    )
+        external
+        view
+        returns (uint256 userTotalInvestment, uint256 totalCtokenInvested)
+    {
         CErc20 cToken = CErc20(cTokenAddress);
-        Erc20 underlying = Erc20(_erc20Address);
-        uint256 totalAccruedInterest = cToken.balanceOfUnderlying(
-            address(this)
-        );
-        uint256 totalErc20Invested = underlying.balanceOf(address(this));
+        totalCtokenInvested = cToken.balanceOf(address(this));
         UserInvestedTokenDetails memory userInvestment = _getUserInvestment(
             userAddress,
             erc20Address
         );
-        uint256 userPercentageInTotal = (userInvestment.tokenAmount * 100) /
-            totalErc20Invested;
-            return userPercentageInTotal;
-        uint256 userInterest = (totalAccruedInterest / 100) *
-            userPercentageInTotal;
-        return userInterest;
-    }
+        return (userInvestment.tokenAmount, totalCtokenInvested);
+    } */
 }

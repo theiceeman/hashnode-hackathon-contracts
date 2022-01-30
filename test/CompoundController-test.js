@@ -3,8 +3,9 @@ const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
 const {
   impersonateAccount,
-  cTokenUnderlyingExchangeRate,
   snapshot,
+  convertUnderlyingToCtoken,
+  convertCtokenToUnderlying
 } = require("./helpers/utils");
 const { latestTime } = require("./helpers/latest-time");
 const { increaseTimeTo } = require("./helpers/increase-time");
@@ -107,9 +108,12 @@ describe("CompoundController", function () {
     it("should assert no of cDAI tokens owned by compoundController is successfull", async () => {
       // 8 Decimals...
       let totalCdaiBalance = await Cdai.balanceOf(compoundController.address);
-      // expect(totalCdaiBalance).to.be.above(0); // Not recommended
+      expect(totalCdaiBalance).to.be.above(0); // Not recommended
     });
     it("should accrue interest after mining blocks", async () => {
+      let userInvestment = await compoundController
+        .connect(signer)
+        .UserInvestments(signer.address, DAI);
       let { balanceOfUnderlying } = await snapshot(
         compoundController,
         Dai,
@@ -123,15 +127,16 @@ describe("CompoundController", function () {
         Dai,
         Cdai
       );
+      let equivDaiInvestedInCdai  = await convertUnderlyingToCtoken(cDAI, userInvestment.tokenAmount, cDAI_ABI);
       console.log("--- after mining some blocks ---");
-      console.log({ _balanceOfUnderlying });
-      console.log({
-        userInterest: await compoundController.callStatic.userTokenAccruedInterest(
-          Cdai.address,
-          Dai.address,
-          signer.address
-        ),
-      });
+      console.log({daiInvested: userInvestment.tokenAmount });
+      console.log({equivDaiInvestedInCdai});
+      console.log({equivNewCdaiInDai: await convertCtokenToUnderlying(cDAI, equivDaiInvestedInCdai, cDAI_ABI) });
+      /* 
+        dai invested
+        current equivalent of dai invested in cdai
+        current equivalent of new cdai in dai
+       */
     });
   });
 });

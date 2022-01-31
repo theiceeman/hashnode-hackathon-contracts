@@ -1,11 +1,12 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
+const { time } = require("@openzeppelin/test-helpers");
 const {
   impersonateAccount,
   snapshot,
   convertUnderlyingToCtoken,
-  convertCtokenToUnderlying
+  convertCtokenToUnderlying,
 } = require("./helpers/utils");
 const { latestTime } = require("./helpers/latest-time");
 const { increaseTimeTo } = require("./helpers/increase-time");
@@ -97,7 +98,7 @@ describe("CompoundController", function () {
         .investInCompound(DAI, cDAI, depositAmount);
       let result = await compoundController
         .connect(signer)
-        .UserInvestments(signer.address, DAI);
+        .UserInvestments(signer.address, 1);
       expect(result.tokenAmount).to.equal(depositAmount);
     });
     it("should assert user remaining token balance in vault(wallet) is correct", async () => {
@@ -122,21 +123,14 @@ describe("CompoundController", function () {
       console.log("--- before mining starts ---");
       console.log({ balanceOfUnderlying });
       await increaseTimeTo((await latestTime()) + 31536000); //  1 yr+
-      let { balanceOfUnderlying: _balanceOfUnderlying } = await snapshot(
+      let { balanceOfUnderlying: _alanceOfUnderlying } = await snapshot(
         compoundController,
         Dai,
         Cdai
       );
-      let equivDaiInvestedInCdai  = await convertUnderlyingToCtoken(cDAI, userInvestment.tokenAmount, cDAI_ABI);
       console.log("--- after mining some blocks ---");
-      console.log({daiInvested: userInvestment.tokenAmount });
-      console.log({equivDaiInvestedInCdai});
-      console.log({equivNewCdaiInDai: await convertCtokenToUnderlying(cDAI, equivDaiInvestedInCdai, cDAI_ABI) });
-      /* 
-        dai invested
-        current equivalent of dai invested in cdai
-        current equivalent of new cdai in dai
-       */
+      console.log({ _alanceOfUnderlying });
+      // console.log({equivNewCdaiInDai: await convertCtokenToUnderlying(cDAI, equivDaiInvestedInCdai, cDAI_ABI) });
     });
   });
 });

@@ -126,10 +126,11 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
     function withdrawFromCompound(
         address _erc20,
         address _cErc20,
-        uint256 tokenAmount
+        uint256 tokenAmount,
+        uint256 investmentId
     ) public nonReentrant returns(bool){
         UserInvestedTokenDetails memory userInvestment = compoundController
-            ._getUserInvestment(msg.sender, _erc20);
+            ._getUserInvestment(msg.sender, investmentId);
         require(
             userInvestment.isExists && userInvestment.tokenAmount != 0,
             "Wallet: invest in compound to continue!"
@@ -148,7 +149,8 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
                 false,
                 _cErc20,
                 _erc20,
-                msg.sender
+                msg.sender,
+                investmentId
             ),
             "Wallet: Withdrawal from compound failed!"
         );

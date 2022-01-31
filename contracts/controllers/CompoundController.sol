@@ -42,7 +42,6 @@ contract CompoundController is ReentrancyGuard {
 
     function _getUserInvestment(
         address userAddress,
-        address tokenAddress,
         uint256 investmentId
     ) public view returns (UserInvestedTokenDetails memory) {
         if (UserInvestments[userAddress][investmentId].isExists) {
@@ -167,7 +166,7 @@ contract CompoundController is ReentrancyGuard {
 
 
  */
-    function getErc20EquivOfCtoken(address cTokenAddress, uint256 cTokenAmount)
+    function convertCtokenToToken(address cTokenAddress, uint256 cTokenAmount)
         public
         returns (uint256)
     {

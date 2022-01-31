@@ -7,6 +7,9 @@ const {
   snapshot,
   convertUnderlyingToCtoken,
   convertCtokenToUnderlying,
+  mineBlocks,
+  cTokenUnderlyingExchangeRate,
+  calcUserAccruedInterest,
 } = require("./helpers/utils");
 const { latestTime } = require("./helpers/latest-time");
 const { increaseTimeTo } = require("./helpers/increase-time");
@@ -111,26 +114,82 @@ describe("CompoundController", function () {
       let totalCdaiBalance = await Cdai.balanceOf(compoundController.address);
       expect(totalCdaiBalance).to.be.above(0); // Not recommended
     });
-    it("should accrue interest after mining blocks", async () => {
-      let userInvestment = await compoundController
-        .connect(signer)
-        .UserInvestments(signer.address, DAI);
-      let { balanceOfUnderlying } = await snapshot(
-        compoundController,
-        Dai,
-        Cdai
-      );
+    /* it("should accrue interest after mining blocks", async () => {
+      let result = await snapshot(compoundController, Dai, Cdai);
       console.log("--- before mining starts ---");
-      console.log({ balanceOfUnderlying });
-      await increaseTimeTo((await latestTime()) + 31536000); //  1 yr+
-      let { balanceOfUnderlying: _alanceOfUnderlying } = await snapshot(
-        compoundController,
-        Dai,
-        Cdai
-      );
+      console.log(result);
+      console.log(await Cdai.connect(signer).callStatic.exchangeRateCurrent());
+      await mineBlocks(100);
+      let result_ = await snapshot(compoundController, Dai, Cdai);
       console.log("--- after mining some blocks ---");
-      console.log({ _alanceOfUnderlying });
-      // console.log({equivNewCdaiInDai: await convertCtokenToUnderlying(cDAI, equivDaiInvestedInCdai, cDAI_ABI) });
+      console.log(result_);
+      console.log(await Cdai.connect(signer).callStatic.exchangeRateCurrent()); 
+     
+
+      console.log(
+        await cTokenUnderlyingExchangeRate(DAI_ABI, DAI, cDAI_ABI, cDAI)
+      );
+      await mineBlocks(1000);
+      console.log(
+        await cTokenUnderlyingExchangeRate(DAI_ABI, DAI, cDAI_ABI, cDAI)
+      );
+    });  */
+    it("should display user investment balance + interest", async () => {
+      let amount = BigNumber.from("5000000000000000000000"); //  5000
+      await Dai.connect(signer).approve(userWallet.address, amount);
+      await userWallet.connect(signer).deposit(Dai.address, amount);
+      await userWallet.connect(signer).investInCompound(DAI, cDAI, amount);
+      //
+      let userInvestment = await compoundController._getUserInvestment(
+        signer.address,
+        2
+      );
+      let userBalance = userInvestment.tokenAmount;
+      let currentExchangeRate = await cTokenUnderlyingExchangeRate(
+        DAI_ABI,
+        DAI,
+        cDAI_ABI,
+        cDAI,
+        userBalance
+      );
+      console.log({ currentExchangeRate });
+      console.log(
+        await compoundController.callStatic.getCtokenEquiv(cDAI, amount)
+      );
+      return;
+      console.log({
+        userBalance: await calcUserAccruedInterest(
+          userBalance,
+          currentExchangeRate
+        ),
+      });
+      // let userCtokenBalance = userBalance / currentExchangeRate;
+      // console.log(userCtokenBalance);
+      // console.log(
+      //   await Cdai.connect(signer).callStatic.balanceOfUnderlying(
+      //     compoundController.address
+      //   )
+      // );
+      await mineBlocks(4000);
+      let _currentExchangeRate = await cTokenUnderlyingExchangeRate(
+        DAI_ABI,
+        DAI,
+        cDAI_ABI,
+        cDAI
+      );
+      // let _userCtokenBalance = userBalance / _currentExchangeRate;
+      // console.log(_userCtokenBalance);
+      // console.log(
+      //   await Cdai.connect(signer).callStatic.balanceOfUnderlying(
+      //     compoundController.address
+      //   )
+      // );
+      console.log({
+        userBalance: await calcUserAccruedInterest(
+          userBalance,
+          _currentExchangeRate
+        ),
+      });
     });
   });
 });

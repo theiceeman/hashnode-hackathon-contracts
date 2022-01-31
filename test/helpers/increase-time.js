@@ -55,5 +55,5 @@ const duration = {
 
 module.exports = {
   increaseTimeTo,
-  duration,
+  duration
 };

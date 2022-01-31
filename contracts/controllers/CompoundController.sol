@@ -18,14 +18,14 @@ contract CompoundController is ReentrancyGuard {
     struct UserInvestedTokenDetails {
         uint256 tokenAmount;
         address tokenAddress;
-        uint256 totalInvestedBeforeUser;
+        uint256 cTokenAmountEquiv;
         bool isExists;
     }
 
     function _setUserInvestments(
         address userAddress,
         address tokenAddress,
-        uint256 totalInvestedBeforeUser,
+        uint256 cTokenAmountEquiv,
         uint256 tokenAmount
     ) internal {
         uint256 userInvestmentCount = countUserInvestments[userAddress];
@@ -34,16 +34,17 @@ contract CompoundController is ReentrancyGuard {
         ] = UserInvestedTokenDetails(
             tokenAmount,
             tokenAddress,
-            totalInvestedBeforeUser,
+            cTokenAmountEquiv,
             true
         );
         countUserInvestments[userAddress] = userInvestmentCount + 1;
     }
 
-    function _getUserInvestment(
-        address userAddress,
-        uint256 investmentId
-    ) public view returns (UserInvestedTokenDetails memory) {
+    function _getUserInvestment(address userAddress, uint256 investmentId)
+        public
+        view
+        returns (UserInvestedTokenDetails memory)
+    {
         if (UserInvestments[userAddress][investmentId].isExists) {
             return UserInvestments[userAddress][investmentId];
         } else {
@@ -52,26 +53,24 @@ contract CompoundController is ReentrancyGuard {
     }
 
     function supplyErc20ToCompound(
-        address _erc20,
-        address _cErc20,
+        address _erc20Address,
+        address _cErc20Address,
         address userAddress,
         uint256 tokenAmount
     ) public returns (bool) {
-        Erc20 underlying = Erc20(_erc20);
-        CErc20 cToken = CErc20(_cErc20);
-        uint256 totalInvestedBeforeUser = cToken.balanceOfUnderlying(
-            address(this)
-        );
-
+        Erc20 underlying = Erc20(_erc20Address);
+        CErc20 cToken = CErc20(_cErc20Address);
         // Approve transfer on the ERC20 contract
-        underlying.approve(_cErc20, tokenAmount);
+        underlying.approve(_cErc20Address, tokenAmount);
         require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
+
+        uint256 cTokenEquiv = getCtokenEquiv(_cErc20Address, tokenAmount);
 
         // Create new token investment for user
         _setUserInvestments(
             userAddress,
-            _erc20,
-            totalInvestedBeforeUser,
+            _erc20Address,
+            cTokenEquiv,
             tokenAmount
         );
         return true;
@@ -158,15 +157,16 @@ contract CompoundController is ReentrancyGuard {
     }
 
     /* 
-    cerc20
-    get current exchange rate
-    call utils function
-    1 cTokem = utils function-return
-
-
-
- */
-    function convertCtokenToToken(address cTokenAddress, uint256 cTokenAmount)
+        let cTokenDecimals = 8;
+        let underlying = new ethers.Contract(erc20Address, erc20Abi, ethers.provider);
+        let cToken = new ethers.Contract(cTokenAddress, cTokenAbi, ethers.provider);
+        let underlyingDecimals = await underlying.callStatic.decimals();
+        let exchangeRateCurrent = await cToken.callStatic.exchangeRateCurrent();
+        let mantissa = 18 + parseInt(underlyingDecimals) - cTokenDecimals;
+        let oneCTokenInUnderlying = exchangeRateCurrent / Math.pow(10, mantissa);
+        return oneCTokenInUnderlying;
+    */
+    function getCtokenEquiv(address cTokenAddress, uint256 tokenAmount)
         public
         returns (uint256)
     {
@@ -177,7 +177,16 @@ contract CompoundController is ReentrancyGuard {
         uint256 currentExchangeRate = cToken.exchangeRateCurrent();
         uint256 mantissa = 18 + (underlyingDecimals - cTokenDecimals);
         uint256 oneCTokenInUnderlying = currentExchangeRate / (10**mantissa);
-        return cTokenAmount * oneCTokenInUnderlying;
+        return currentExchangeRate;
+        return tokenAmount / oneCTokenInUnderlying;
+    }
+
+    function calcUserAccruedInterest(
+        uint256 tokenAmount,
+        uint256 oneCTokenInUnderlying
+    ) public pure returns (uint256) {
+        uint256 userAccruedInterest = tokenAmount / oneCTokenInUnderlying;
+        return userAccruedInterest;
     }
 
     /* 
@@ -185,7 +194,7 @@ contract CompoundController is ReentrancyGuard {
         and the total token invested by the user, so that the users interest 
         can be calclated off-chain.
      */
-   /*  function getDetailsForCalcUserInterest(
+    /*  function getDetailsForCalcUserInterest(
         address cTokenAddress,
         address erc20Address,
         address userAddress

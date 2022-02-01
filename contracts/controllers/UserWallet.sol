@@ -128,20 +128,20 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
         address _cErc20,
         uint256 tokenAmount,
         uint256 investmentId
-    ) public nonReentrant returns(bool){
+    ) public nonReentrant returns (bool) {
         UserInvestedTokenDetails memory userInvestment = compoundController
             ._getUserInvestment(msg.sender, investmentId);
         require(
             userInvestment.isExists && userInvestment.tokenAmount != 0,
-            "Wallet: invest in compound to continue!"
+            "Withdraw: invest in compound to continue!"
         );
         require(
             tokenAmount > 0,
-            "Wallet: Withdrawal amount must be greater than zero!"
+            "Withdraw: Withdrawal amount must be greater than zero!"
         );
         require(
             tokenAmount <= userInvestment.tokenAmount,
-            "Wallet: Insufficient token funds for user!"
+            "Withdraw: Insufficient token funds for user!"
         );
         require(
             compoundController.redeemCErc20Tokens(
@@ -152,7 +152,13 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
                 msg.sender,
                 investmentId
             ),
-            "Wallet: Withdrawal from compound failed!"
+            "Withdraw: Withdrawal from compound failed!"
+        );
+        Erc20 underlying = Erc20(_erc20);
+        underlying.transferFrom(
+            address(compoundController),
+            address(vault),
+            tokenAmount
         );
 
         // Update user vault(wallet) balance

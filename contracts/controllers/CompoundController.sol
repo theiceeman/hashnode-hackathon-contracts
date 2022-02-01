@@ -107,7 +107,7 @@ contract CompoundController is ReentrancyGuard {
 
         // After redeeming from compound to this contract, transfer redeemed token to the owners address
         Erc20 underlying = Erc20(_erc20Address);
-        underlying.transfer(userAddress, amountToRedeem);
+        underlying.approve(msg.sender, amountToRedeem);
 
         // Update the users investment balance
         uint256 finalUserBalance = userTokenBalance - amountToRedeem;

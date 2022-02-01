@@ -144,4 +144,27 @@ describe("CompoundController", function () {
       console.log(currentUserBalance / 10 ** 18);
     });
   });
+  describe("withdrawFromCompound", function () {
+    it("should fail if user has not invested", async () => {
+      let withdrawAmount = BigNumber.from("100000000000000000000"); //  100
+      await expect(
+        userWallet.connect(user1).withdrawFromCompound(DAI, cDAI, withdrawAmount, 1)
+      ).to.be.revertedWith("Withdraw: invest in compound to continue!");
+
+    })
+    it("should fail if withdraw amount is less than 1", async () => {
+      let withdrawAmount = 0; 
+      await expect(
+        userWallet.connect(signer).withdrawFromCompound(DAI, cDAI, withdrawAmount, 1)
+      ).to.be.revertedWith("Withdraw: Withdrawal amount must be greater than zero!");
+
+    })
+    it("should fail if withdraw amount is greater than investment balance + interest", async () => {
+      let withdrawAmount = BigNumber.from("110000000000000000000"); //  110
+      await expect(
+        userWallet.connect(signer).withdrawFromCompound(DAI, cDAI, withdrawAmount, 1)
+      ).to.be.revertedWith("Withdraw: Withdrawal amount must be greater than zero!");
+
+    })
+  })
 });

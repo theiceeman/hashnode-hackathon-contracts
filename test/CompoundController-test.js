@@ -5,11 +5,11 @@ const { time } = require("@openzeppelin/test-helpers");
 const {
   impersonateAccount,
   snapshot,
-  convertUnderlyingToCtoken,
-  convertCtokenToUnderlying,
   mineBlocks,
-  cTokenUnderlyingExchangeRate,
+  getCtokenEquiv,
   calcUserAccruedInterest,
+  _getUnderlyingEquiv,
+  _getCtokenEquiv,
 } = require("./helpers/utils");
 const { latestTime } = require("./helpers/latest-time");
 const { increaseTimeTo } = require("./helpers/increase-time");
@@ -114,82 +114,39 @@ describe("CompoundController", function () {
       let totalCdaiBalance = await Cdai.balanceOf(compoundController.address);
       expect(totalCdaiBalance).to.be.above(0); // Not recommended
     });
-    /* it("should accrue interest after mining blocks", async () => {
-      let result = await snapshot(compoundController, Dai, Cdai);
-      console.log("--- before mining starts ---");
-      console.log(result);
-      console.log(await Cdai.connect(signer).callStatic.exchangeRateCurrent());
-      await mineBlocks(100);
-      let result_ = await snapshot(compoundController, Dai, Cdai);
-      console.log("--- after mining some blocks ---");
-      console.log(result_);
-      console.log(await Cdai.connect(signer).callStatic.exchangeRateCurrent()); 
-     
-
-      console.log(
-        await cTokenUnderlyingExchangeRate(DAI_ABI, DAI, cDAI_ABI, cDAI)
-      );
-      await mineBlocks(1000);
-      console.log(
-        await cTokenUnderlyingExchangeRate(DAI_ABI, DAI, cDAI_ABI, cDAI)
-      );
-    });  */
-    it("should display user investment balance + interest", async () => {
+    it("should calculate user investment balance + interest", async () => {
       let amount = BigNumber.from("5000000000000000000000"); //  5000
       await Dai.connect(signer).approve(userWallet.address, amount);
       await userWallet.connect(signer).deposit(Dai.address, amount);
-      await userWallet.connect(signer).investInCompound(DAI, cDAI, amount);
+      let cTokenEquiv = getCtokenEquiv(DAI_ABI, DAI, cDAI_ABI, cDAI, amount);
+      await userWallet
+        .connect(signer)
+        .investInCompound(DAI, cDAI, amount, cTokenEquiv);
       //
       let userInvestment = await compoundController._getUserInvestment(
         signer.address,
         2
       );
-      let userBalance = userInvestment.tokenAmount;
-      let currentExchangeRate = await cTokenUnderlyingExchangeRate(
+
+      let exchangeRateCurrent = await Cdai.callStatic.exchangeRateCurrent();
+      let cTokenInvested = await _getCtokenEquiv(
         DAI_ABI,
         DAI,
-        cDAI_ABI,
-        cDAI,
-        userBalance
+        userInvestment.tokenAmount,
+        exchangeRateCurrent
       );
-      console.log({ currentExchangeRate });
-      console.log(
-        await compoundController.callStatic.getCtokenEquiv(cDAI, amount)
-      );
-      return;
-      console.log({
-        userBalance: await calcUserAccruedInterest(
-          userBalance,
-          currentExchangeRate
-        ),
-      });
-      // let userCtokenBalance = userBalance / currentExchangeRate;
-      // console.log(userCtokenBalance);
-      // console.log(
-      //   await Cdai.connect(signer).callStatic.balanceOfUnderlying(
-      //     compoundController.address
-      //   )
-      // );
+      console.log("--- before mining starts ---");
+      console.log(amount / 10 ** 18);
       await mineBlocks(4000);
-      let _currentExchangeRate = await cTokenUnderlyingExchangeRate(
+      console.log("--- after mining some blocks ---");
+      let _exchangeRateCurrent = await Cdai.callStatic.exchangeRateCurrent();
+      let currentUserBalance = await _getUnderlyingEquiv(
         DAI_ABI,
         DAI,
-        cDAI_ABI,
-        cDAI
+        cTokenInvested,
+        _exchangeRateCurrent
       );
-      // let _userCtokenBalance = userBalance / _currentExchangeRate;
-      // console.log(_userCtokenBalance);
-      // console.log(
-      //   await Cdai.connect(signer).callStatic.balanceOfUnderlying(
-      //     compoundController.address
-      //   )
-      // );
-      console.log({
-        userBalance: await calcUserAccruedInterest(
-          userBalance,
-          _currentExchangeRate
-        ),
-      });
+      console.log(currentUserBalance / 10 ** 18);
     });
   });
 });

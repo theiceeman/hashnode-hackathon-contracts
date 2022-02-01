@@ -18,7 +18,7 @@ async function mineBlocks(blockNumber) {
 }
 
 // 1 cToken equals...
-async function cTokenUnderlyingExchangeRate(
+async function getCtokenEquiv(
   erc20Abi,
   erc20Address,
   cTokenAbi,
@@ -54,20 +54,40 @@ async function snapshot(compoundController, token, cToken) {
   };
 }
 
-/* 
-  This will return a users tokenAmount interest in a pool
- */
-async function calcUserAccruedInterest(tokenAmount, oneCTokenInUnderlying) {
-  let userAccruedInterest = tokenAmount / oneCTokenInUnderlying;
-  return userAccruedInterest;
+async function _getCtokenEquiv(
+  erc20Abi,
+  erc20Address,
+  tokenAmount,
+  exchangeRateCurrent
+) {
+  let cTokenDecimals = 8;
+  let underlying = new ethers.Contract(erc20Address, erc20Abi, ethers.provider);
+  let underlyingDecimals = await underlying.callStatic.decimals();
+  let mantissa = 18 + parseInt(underlyingDecimals) - cTokenDecimals;
+  let oneCTokenInUnderlying = exchangeRateCurrent / Math.pow(10, mantissa);
+  let cTokenEquiv = tokenAmount / oneCTokenInUnderlying;
+  return cTokenEquiv;
+}
+async function _getUnderlyingEquiv(
+  erc20Abi,
+  erc20Address,
+  cTokenAmount,
+  exchangeRateCurrent
+) {
+  let cTokenDecimals = 8;
+  let underlying = new ethers.Contract(erc20Address, erc20Abi, ethers.provider);
+  let underlyingDecimals = await underlying.callStatic.decimals();
+  let mantissa = 18 + parseInt(underlyingDecimals) - cTokenDecimals;
+  let oneCTokenInUnderlying = exchangeRateCurrent / Math.pow(10, mantissa);
+  let underlyingEquiv = cTokenAmount * oneCTokenInUnderlying;
+  return underlyingEquiv;
 }
 
 module.exports = {
   impersonateAccount,
-  cTokenUnderlyingExchangeRate,
+  getCtokenEquiv,
   snapshot,
-  // getErc20EquivOfCtoken,
-  // calcUserInterest,
   mineBlocks,
-  calcUserAccruedInterest,
+  _getUnderlyingEquiv,
+  _getCtokenEquiv,
 };

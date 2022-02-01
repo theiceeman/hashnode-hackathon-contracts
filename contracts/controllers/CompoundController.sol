@@ -18,14 +18,14 @@ contract CompoundController is ReentrancyGuard {
     struct UserInvestedTokenDetails {
         uint256 tokenAmount;
         address tokenAddress;
-        uint256 cTokenAmountEquiv;
+        uint256 exchangeRate;
         bool isExists;
     }
 
     function _setUserInvestments(
         address userAddress,
         address tokenAddress,
-        uint256 cTokenAmountEquiv,
+        uint256 exchangeRate,
         uint256 tokenAmount
     ) internal {
         uint256 userInvestmentCount = countUserInvestments[userAddress];
@@ -34,7 +34,7 @@ contract CompoundController is ReentrancyGuard {
         ] = UserInvestedTokenDetails(
             tokenAmount,
             tokenAddress,
-            cTokenAmountEquiv,
+            exchangeRate,
             true
         );
         countUserInvestments[userAddress] = userInvestmentCount + 1;
@@ -64,13 +64,13 @@ contract CompoundController is ReentrancyGuard {
         underlying.approve(_cErc20Address, tokenAmount);
         require(cToken.mint(tokenAmount) == 0, "compound: mint failed!");
 
-        uint256 cTokenEquiv = getCtokenEquiv(_cErc20Address, tokenAmount);
+        uint256 exchangeRate = cToken.exchangeRateCurrent();
 
         // Create new token investment for user
         _setUserInvestments(
             userAddress,
             _erc20Address,
-            cTokenEquiv,
+            exchangeRate,
             tokenAmount
         );
         return true;
@@ -155,60 +155,4 @@ contract CompoundController is ReentrancyGuard {
         supplyRate = cToken.supplyRatePerBlock();
         return (exchangeRate, supplyRate);
     }
-
-    /* 
-        let cTokenDecimals = 8;
-        let underlying = new ethers.Contract(erc20Address, erc20Abi, ethers.provider);
-        let cToken = new ethers.Contract(cTokenAddress, cTokenAbi, ethers.provider);
-        let underlyingDecimals = await underlying.callStatic.decimals();
-        let exchangeRateCurrent = await cToken.callStatic.exchangeRateCurrent();
-        let mantissa = 18 + parseInt(underlyingDecimals) - cTokenDecimals;
-        let oneCTokenInUnderlying = exchangeRateCurrent / Math.pow(10, mantissa);
-        return oneCTokenInUnderlying;
-    */
-    function getCtokenEquiv(address cTokenAddress, uint256 tokenAmount)
-        public
-        returns (uint256)
-    {
-        uint256 cTokenDecimals = 8;
-        uint256 underlyingDecimals = 18;
-        CErc20 cToken = CErc20(cTokenAddress);
-
-        uint256 currentExchangeRate = cToken.exchangeRateCurrent();
-        uint256 mantissa = 18 + (underlyingDecimals - cTokenDecimals);
-        uint256 oneCTokenInUnderlying = currentExchangeRate / (10**mantissa);
-        return currentExchangeRate;
-        return tokenAmount / oneCTokenInUnderlying;
-    }
-
-    function calcUserAccruedInterest(
-        uint256 tokenAmount,
-        uint256 oneCTokenInUnderlying
-    ) public pure returns (uint256) {
-        uint256 userAccruedInterest = tokenAmount / oneCTokenInUnderlying;
-        return userAccruedInterest;
-    }
-
-    /* 
-        This function will return the total cToken currently invested by this contract 
-        and the total token invested by the user, so that the users interest 
-        can be calclated off-chain.
-     */
-    /*  function getDetailsForCalcUserInterest(
-        address cTokenAddress,
-        address erc20Address,
-        address userAddress
-    )
-        external
-        view
-        returns (uint256 userTotalInvestment, uint256 totalCtokenInvested)
-    {
-        CErc20 cToken = CErc20(cTokenAddress);
-        totalCtokenInvested = cToken.balanceOf(address(this));
-        UserInvestedTokenDetails memory userInvestment = _getUserInvestment(
-            userAddress,
-            erc20Address
-        );
-        return (userInvestment.tokenAmount, totalCtokenInvested);
-    } */
 }

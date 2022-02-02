@@ -104,7 +104,7 @@ describe("CompoundController", function () {
       let userBalance = await vault.getUserTokenBalance(signer.address, DAI);
       expect(userBalance).to.equal(investedAmount);
     });
-    it("should assert no of cDAI tokens owned by compoundController is successfull", async () => {
+    it("should assert no of cDAI tokens owned by compoundController if successfull", async () => {
       // 8 Decimals...
       let totalCdaiBalance = await Cdai.balanceOf(compoundController.address);
       expect(totalCdaiBalance).to.be.above(0); // Not recommended
@@ -132,7 +132,7 @@ describe("CompoundController", function () {
       );
       console.log("--- before mining starts ---");
       console.log(amount / 10 ** 18);
-      await mineBlocks(4000);
+      await mineBlocks(40);
       console.log("--- after mining some blocks ---");
       let _exchangeRateCurrent = await Cdai.callStatic.exchangeRateCurrent();
       let currentUserBalance = await _getUnderlyingEquiv(
@@ -148,23 +148,46 @@ describe("CompoundController", function () {
     it("should fail if user has not invested", async () => {
       let withdrawAmount = BigNumber.from("100000000000000000000"); //  100
       await expect(
-        userWallet.connect(user1).withdrawFromCompound(DAI, cDAI, withdrawAmount, 1)
+        userWallet
+          .connect(user1)
+          .withdrawFromCompound(DAI, cDAI, withdrawAmount, 1)
       ).to.be.revertedWith("Withdraw: invest in compound to continue!");
-
-    })
+    });
     it("should fail if withdraw amount is less than 1", async () => {
-      let withdrawAmount = 0; 
+      let withdrawAmount = 0;
       await expect(
-        userWallet.connect(signer).withdrawFromCompound(DAI, cDAI, withdrawAmount, 1)
-      ).to.be.revertedWith("Withdraw: Withdrawal amount must be greater than zero!");
-
-    })
-    it("should fail if withdraw amount is greater than investment balance + interest", async () => {
+        userWallet
+          .connect(signer)
+          .withdrawFromCompound(DAI, cDAI, withdrawAmount, 1)
+      ).to.be.revertedWith(
+        "Withdraw: Withdrawal amount must be greater than zero!"
+      );
+    });
+    /* it("should fail if withdraw amount is greater than investment balance + interest", async () => {
       let withdrawAmount = BigNumber.from("110000000000000000000"); //  110
       await expect(
         userWallet.connect(signer).withdrawFromCompound(DAI, cDAI, withdrawAmount, 1)
       ).to.be.revertedWith("Withdraw: Withdrawal amount must be greater than zero!");
 
-    })
-  })
+    }) */
+    it("should increment vault token balance if successfull", async () => {
+      let expectedVaultBalance = BigNumber.from("150000000000000000000"); //  150
+      let withdrawAmount = BigNumber.from("100000000000000000000"); //  100
+      let vaultTokenBalance = await Dai.balanceOf(vault.address);
+      // console.log(vaultTokenBalance);
+      console.log(await await compoundController._getUserInvestment(
+        signer.address,
+        1
+      ));
+      userWallet
+        .connect(signer)
+        .withdrawFromCompound(DAI, cDAI, withdrawAmount, 2);
+      let _vaultTokenBalance = await Dai.balanceOf(vault.address);
+      // console.log(_vaultTokenBalance);
+      console.log(await await compoundController._getUserInvestment(
+        signer.address,
+        1
+      ));
+    });
+  });
 });

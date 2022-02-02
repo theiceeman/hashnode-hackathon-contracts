@@ -90,8 +90,12 @@ contract CompoundController is ReentrancyGuard {
         address userAddress,
         uint256 investmentId
     ) public returns (bool) {
-        uint256 userTokenBalance = UserInvestments[userAddress][investmentId]
-            .tokenAmount;
+        // uint256 userTokenBalance = UserInvestments[userAddress][investmentId]
+        // .tokenAmount;
+        UserInvestedTokenDetails memory userInvestment = _getUserInvestment(
+            userAddress,
+            investmentId
+        );
 
         // Create a reference to the corresponding cToken contract, like cDAI
         CErc20 cToken = CErc20(_cErc20);
@@ -110,7 +114,7 @@ contract CompoundController is ReentrancyGuard {
         underlying.approve(msg.sender, amountToRedeem);
 
         // Update the users investment balance
-        uint256 finalUserBalance = userTokenBalance - amountToRedeem;
+        uint256 finalUserBalance = userInvestment.tokenAmount - amountToRedeem;
         UserInvestments[userAddress][investmentId]
             .tokenAmount = finalUserBalance;
 

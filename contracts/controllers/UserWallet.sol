@@ -129,6 +129,7 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
         uint256 tokenAmount,
         uint256 investmentId
     ) public nonReentrant returns (bool) {
+        // make sure withdrawAmount isnt > userInvestmentBalance
         UserInvestedTokenDetails memory userInvestment = compoundController
             ._getUserInvestment(msg.sender, investmentId);
         require(
@@ -139,10 +140,10 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
             tokenAmount > 0,
             "Withdraw: Withdrawal amount must be greater than zero!"
         );
-        require(
-            tokenAmount <= userInvestment.tokenAmount,
-            "Withdraw: Insufficient token funds for user!"
-        );
+        // require(
+        //     tokenAmount <= userInvestment.tokenAmount,
+        //     "Withdraw: Insufficient token funds for user!"
+        // );
         require(
             compoundController.redeemCErc20Tokens(
                 tokenAmount,

@@ -109,14 +109,17 @@ describe("CompoundController", function () {
       let totalCdaiBalance = await Cdai.balanceOf(compoundController.address);
       expect(totalCdaiBalance).to.be.above(0); // Not recommended
     });
+    // Deposit 5000 DAI in vault, then invest it in compound
     it("should calculate user investment balance + interest", async () => {
       let amount = BigNumber.from("5000000000000000000000"); //  5000
       await Dai.connect(signer).approve(userWallet.address, amount);
       await userWallet.connect(signer).deposit(Dai.address, amount);
+
       let cTokenEquiv = getCtokenEquiv(DAI_ABI, DAI, cDAI_ABI, cDAI, amount);
       await userWallet
         .connect(signer)
         .investInCompound(DAI, cDAI, amount, cTokenEquiv);
+
       //
       let userInvestment = await compoundController._getUserInvestment(
         signer.address,
@@ -170,24 +173,30 @@ describe("CompoundController", function () {
       ).to.be.revertedWith("Withdraw: Withdrawal amount must be greater than zero!");
 
     }) */
-    it("should increment vault token balance if successfull", async () => {
+    // Withdraw 100 DAI from compound
+    it("should increment total vault token balance if successfull", async () => {
       let expectedVaultBalance = BigNumber.from("150000000000000000000"); //  150
       let withdrawAmount = BigNumber.from("100000000000000000000"); //  100
-      let vaultTokenBalance = await Dai.balanceOf(vault.address);
-      // console.log(vaultTokenBalance);
-      console.log(await await compoundController._getUserInvestment(
-        signer.address,
-        1
-      ));
-      userWallet
+
+      await userWallet
         .connect(signer)
         .withdrawFromCompound(DAI, cDAI, withdrawAmount, 2);
-      let _vaultTokenBalance = await Dai.balanceOf(vault.address);
-      // console.log(_vaultTokenBalance);
-      console.log(await await compoundController._getUserInvestment(
-        signer.address,
-        1
-      ));
+      let vaultTokenBalance = await Dai.balanceOf(vault.address);
+      expect(vaultTokenBalance).to.equal(expectedVaultBalance);
+    });
+    it("should reduce user investment balance if successfull", async () => {
+      let expectedUserBalance = BigNumber.from("4900000000000000000000"); //  4900
+      let userInvestment = await compoundController
+        .connect(signer)
+        ._getUserInvestment(signer.address, 2);
+      expect(userInvestment.tokenAmount).to.equal(expectedUserBalance);
+    });
+    it("should increase user vault token balance if successfull", async () => {
+      let expectedUserVaultBalance = BigNumber.from("150000000000000000000"); //  150
+      let userVault = await vault
+        .connect(signer)
+        ._getUserVault(signer.address, DAI);
+      expect(userVault.totalAmount).to.equal(expectedUserVaultBalance);
     });
   });
 });

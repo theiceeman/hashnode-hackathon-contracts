@@ -109,7 +109,7 @@ contract CompoundController is ReentrancyGuard {
             redeemResult = cToken.redeemUnderlying(amountToRedeem);
         }
 
-        // After redeeming from compound to this contract, transfer redeemed token to the owners address
+        // After redeeming from compound to this contract, approve wallet contract to transfer withdrawn token to vault
         Erc20 underlying = Erc20(_erc20Address);
         underlying.approve(msg.sender, amountToRedeem);
 

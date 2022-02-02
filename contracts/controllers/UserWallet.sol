@@ -162,9 +162,13 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
             tokenAmount
         );
 
+        UserVaultTokenDetail memory userVault = vault._getUserVault(
+            msg.sender,
+            _erc20
+        );
         // Update user vault(wallet) balance
-        uint256 userNewBalance = userInvestment.tokenAmount + tokenAmount;
-        vault._setUserVault(msg.sender, _erc20, userNewBalance);
+        uint256 userNewVaultBalance = userVault.totalAmount + tokenAmount;
+        vault._setUserVault(msg.sender, _erc20, userNewVaultBalance);
         return true;
     }
 }

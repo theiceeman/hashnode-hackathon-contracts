@@ -27,6 +27,7 @@
     "test:compound": "hardhat test --network localhost ./test/CompoundController-test.js",
     "test:balance": "hardhat test --network localhost ./test/balance-test.js",
     "run": "npx hardhat run --network localhost scripts/run.js",
+    "deploy:kovan": "npx hardhat run --network kovan scripts/run.js",
     "fork": "npx hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/[KEY]"
   }
 }

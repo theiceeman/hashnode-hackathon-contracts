@@ -3,6 +3,9 @@ require("@nomiclabs/hardhat-ethers");
 require("./tasks/PrintAccounts");
 require("dotenv").config();
 
+const KOVAN_NODE = process.env.KOVAN_NODE;
+const PRV_KEY = process.env.PRV_KEY;
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -12,6 +15,14 @@ module.exports = {
     hardhat: {},
     mainnet_fork: {
       url: process.env.MAINNET_PROVIDER_URL,
+    },
+    localhost: {
+      url: `http://localhost:8545`,
+      timeout: 150000,
+    },
+    kovan: {
+      url: KOVAN_NODE,
+      accounts: [PRV_KEY],
     },
     /* rinkeby: {
       url: "https://eth-rinkeby.alchemyapi.io/v2/123abc123abc123abc123abc123abcde",
@@ -35,9 +46,9 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
-      }
-    }
+        runs: 200,
+      },
+    },
   },
   mocha: {
     timeout: 50000,

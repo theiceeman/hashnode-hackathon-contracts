@@ -22,14 +22,39 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
         compoundController = CompoundController(_compoundControllerAddress);
     }
 
+    // token_address, TIMESTAMP, SENDER_ADDRESS
+    event DepositInWallet(
+        address token,
+        address indexed sender,
+        uint256 timestamp,
+        uint256 amount
+    );
+    event WithdrawFromWallet(
+        address token,
+        address indexed recipient,
+        uint256 timestamp,
+        uint256 amount
+    );
+    event InvestedInCompound(
+        address token,
+        address indexed caller,
+        uint256 timestamp,
+        uint256 amount
+    );
+    event WithdrawFromCompound(
+        address token,
+        address indexed caller,
+        uint256 timestamp,
+        uint256 amount
+    );
+
     /* 
         address_of_token, amount
     */
-    function deposit(address tokenAddress, uint256 amount)
-        public
-        nonReentrant
-        returns (bool success)
-    {
+    function deposit(
+        address tokenAddress,
+        uint256 amount
+    ) public nonReentrant returns (bool success) {
         UserVaultTokenDetail memory userVault = vault._getUserVault(
             msg.sender,
             tokenAddress
@@ -46,6 +71,8 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
         );
         uint256 userNewBalance = userVault.totalAmount + amount;
         vault._setUserVault(msg.sender, tokenAddress, userNewBalance);
+
+        emit DepositInWallet(tokenAddress, msg.sender, block.timestamp, amount);
 
         return true;
     }
@@ -75,6 +102,13 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
         );
         uint256 userRemainingBalance = userVault.totalAmount - amount;
         vault._setUserVault(msg.sender, tokenAddress, userRemainingBalance);
+
+        emit WithdrawFromWallet(
+            tokenAddress,
+            recipient,
+            block.timestamp,
+            amount
+        );
 
         return true;
     }
@@ -120,6 +154,13 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
         // Update user vault(wallet) balance
         uint256 userRemainingBalance = userVault.totalAmount - tokenAmount;
         vault._setUserVault(msg.sender, _erc20, userRemainingBalance);
+
+        emit InvestedInCompound(
+            _erc20,
+            msg.sender,
+            block.timestamp,
+            tokenAmount
+        );
         return true;
     }
 
@@ -169,6 +210,14 @@ contract UserWallet is ReentrancyGuard, Vault, CompoundController {
         // Update user vault(wallet) balance
         uint256 userNewVaultBalance = userVault.totalAmount + tokenAmount;
         vault._setUserVault(msg.sender, _erc20, userNewVaultBalance);
+
+        emit WithdrawFromCompound(
+            _erc20,
+            msg.sender,
+            block.timestamp,
+            tokenAmount
+        );
+
         return true;
     }
 }

@@ -3,7 +3,7 @@ require("@nomiclabs/hardhat-ethers");
 require("./tasks/PrintAccounts");
 require("dotenv").config();
 
-const KOVAN_NODE = process.env.KOVAN_NODE;
+const GOERLI_NODE = process.env.GOERLI_NODE;
 const PRV_KEY = process.env.PRV_KEY;
 
 /**
@@ -17,11 +17,15 @@ module.exports = {
       url: process.env.MAINNET_PROVIDER_URL,
     },
     localhost: {
-      url: `http://localhost:8545`,
+      url: `http://127.0.0.1:8545`,
       timeout: 150000,
     },
-    kovan: {
-      url: KOVAN_NODE,
+    // kovan: {
+    //   url: KOVAN_NODE,
+    //   accounts: [PRV_KEY],
+    // },
+    goerli: {
+      url: GOERLI_NODE,
       accounts: [PRV_KEY],
     },
     /* rinkeby: {

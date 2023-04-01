@@ -1,4 +1,6 @@
+const { BigNumber } = require("ethers");
 const hre = require("hardhat");
+const { impersonateAccount } = require("../test/helpers/utils");
 
 /* 
 ...vault deployed to: 0xaD1Bd598Bd6A62728E17205337e90d70f667794F
@@ -34,6 +36,18 @@ async function main() {
   console.log("...userWallet deployed to:", userWallet.address);
 
   vault.transferOwnership(userWallet.address);
+
+
+  // Impersonate account & transfer some DAI to my account
+  const DAI = process.env.DAI;
+  const DAI_WHALE = process.env.DAI_WHALE;
+  
+  const Dai = await ethers.getContractAt("IERC20", DAI);
+  const signer = await impersonateAccount(DAI_WHALE);
+
+  let amount = BigNumber.from("5000000000000000000000"); //  5000
+  await Dai.connect(signer).approve(userWallet.address, amount);
+  await Dai.connect(signer).transfer('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', amount);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

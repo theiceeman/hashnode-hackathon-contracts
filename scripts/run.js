@@ -2,18 +2,19 @@ const { BigNumber } = require("ethers");
 const hre = require("hardhat");
 const { impersonateAccount } = require("../test/helpers/utils");
 
-/* 
-...vault deployed to: 0xaD1Bd598Bd6A62728E17205337e90d70f667794F
-...compoundController deployed to: 0x4b288a2Ef1B912c64921ba31A5554dBc387f1d2f
-...userWallet deployed to: 0xfD7C3330fA3B4595A4670469524D2F80DAE13800
 
+/* 
+MATIC
+...vault deployed to: 0x91a5966fA90D1D17b02581E139c77409a2f0CFC1
+...compoundController deployed to:  0xd79da6859E67C25d180332E89D5F80C369Cc40fb
+...userWallet deployed to:  0x83318D0C6972516C636A2A573D19Db2949534934
  */
 
 /* 
-...vault deployed to: 0x68f32d33281B67DFE55B69Cf56EadEA683cC7c42
-...compoundController deployed to: 0x71658E7e403A12383612bEa3418d15a2Ea2c08B3 
-...userWallet deployed to: 0x842e55Cd62AD823397AD1d990B29AAB38bA1C780
-
+GOERLI
+...vault deployed to: 0x5B418575aBE8Ec7E729781189902049eEf997D77
+...compoundController deployed to:  0xAC1e1BD4E2e70E3075A76F80fEcfEce829Ac2cc0
+...userWallet deployed to:  0xD040a24C52D278bd63F925BD0e739635Db57dDe6
  */
 
 async function main() {
@@ -41,7 +42,7 @@ async function main() {
   // Impersonate account & transfer some DAI to my account
   const DAI = process.env.DAI;
   const DAI_WHALE = process.env.DAI_WHALE;
-  
+
   const Dai = await ethers.getContractAt("IERC20", DAI);
   const signer = await impersonateAccount(DAI_WHALE);
 
